@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Control Building States</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #121212;
+      color: #ffffff;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 2rem;
+      font-size: 2.5rem;
+      background: linear-gradient(to right, #a855f7, #6366f1);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .controls {
+      margin-bottom: 2rem;
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .search-container {
+      flex: 1;
+      position: relative;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: none;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+    }
+
+    .search-input:focus {
+      outline: none;
+      background: rgba(255, 255, 255, 0.15);
+      box-shadow: 0 0 0 2px rgba(163, 85, 247, 0.4);
+    }
+
+    .building {
+      margin-bottom: 1rem;
+      padding: 1rem;
+      border-radius: 8px;
+      background: linear-gradient(145deg, rgba(163, 85, 247, 0.1), rgba(99, 102, 241, 0.1));
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(163, 85, 247, 0.2);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .building:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 20px rgba(163, 85, 247, 0.2);
+    }
+
+    .state-indicator {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 1rem;
+      transition: all 0.3s ease;
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+    }
+
+    .building-name {
+      display: inline-block;
+      min-width: 300px;
+      color: #fff;
+      font-weight: 500;
+    }
+
+    .state-text {
+      color: rgba(255, 255, 255, 0.7);
+      margin-right: 1rem;
+    }
+
+    .button-group {
+      display: inline-flex;
+      gap: 0.5rem;
+    }
+
+    button {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      font-size: 0.875rem;
+    }
+
+    .open-btn {
+      background: linear-gradient(to right, #22c55e, #16a34a);
+      color: white;
+    }
+
+    .close-btn {
+      background: linear-gradient(to right, #ef4444, #dc2626);
+      color: white;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    .loading {
+      text-align: center;
+      padding: 2rem;
+      color: rgba(255, 255, 255, 0.7);
+      font-style: italic;
+    }
+
+    .error {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #ef4444;
+      padding: 1rem;
+      border-radius: 8px;
+      margin: 1rem 0;
+      text-align: center;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+
+    .loading .state-indicator {
+      animation: pulse 1.5s infinite;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Building Control System</h1>
+    
+    <div class="controls">
+      <div class="search-container">
+        <input type="text" 
+               class="search-input" 
+               placeholder="Search buildings..." 
+               id="searchInput"
+               onkeyup="filterBuildings()">
+      </div>
+    </div>
+
+    <div id="buildings">
+      <div class="loading">
+        <span class="state-indicator" style="background: linear-gradient(to right, #a855f7, #6366f1)"></span>
+        Loading buildings...
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const buildingsContainer = document.getElementById('buildings');
+    const searchInput = document.getElementById('searchInput');
+    let buildingsData = [];
+
+    function filterBuildings() {
+      const searchTerm = searchInput.value.toLowerCase();
+      const filteredBuildings = buildingsData.filter(building => 
+        building.name.toLowerCase().includes(searchTerm)
+      );
+      renderBuildings(filteredBuildings);
+    }
+
+    function renderBuildings(buildings) {
+      buildingsContainer.innerHTML = '';
+      
+      buildings.forEach(building => {
+        const buildingDiv = document.createElement('div');
+        buildingDiv.className = 'building';
+        
+        const stateIndicator = document.createElement('span');
+        stateIndicator.className = 'state-indicator';
+        stateIndicator.style.backgroundColor = building.color;
+        
+        buildingDiv.innerHTML = `
+          ${stateIndicator.outerHTML}
+          <span class="building-name">${building.name}</span>
+          <span class="state-text">(${building.state})</span>
+          <div class="button-group">
+            <button class="open-btn" onclick="updateState('${building.name}', 'open')">Open</button>
+            <button class="close-btn" onclick="updateState('${building.name}', 'closed')">Close</button>
+          </div>
+        `;
+        
+        buildingsContainer.appendChild(buildingDiv);
+      });
+    }
+
+    function showError(message) {
+      buildingsContainer.innerHTML = `
+        <div class="error">
+          ${message}
+          <button onclick="fetchBuildings()" class="retry-btn">Retry</button>
+        </div>
+      `;
+    }
+
+    async function fetchBuildings() {
+      try {
+        buildingsContainer.innerHTML = `
+          <div class="loading">
+            <span class="state-indicator" style="background: linear-gradient(to right, #a855f7, #6366f1)"></span>
+            Loading buildings...
+          </div>
+        `;
+        const response = await fetch('/buildings');
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        buildingsData = await response.json();
+        renderBuildings(buildingsData);
+      } catch (error) {
+        console.error('Error fetching buildings:', error);
+        showError('Failed to load buildings. Please try again.');
+      }
+    }
+
+    async function updateState(name, state) {
+      try {
+        const button = event.target;
+        const originalText = button.textContent;
+        button.textContent = '...';
+        button.disabled = true;
+
+        const response = await fetch(`/buildings/${name}`, {
+          method: 'PUT',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ state }),
+        });
+        
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+        const result = await response.json();
+        
+        const buildingElement = Array.from(document.getElementsByClassName('building'))
+          .find(el => el.textContent.includes(name));
+        if (buildingElement) {
+          const stateText = buildingElement.querySelector('.state-text');
+          if (stateText) {
+            stateText.textContent = `(${state})`;
+          }
+        }
+      } catch (error) {
+        console.error('Error updating building state:', error);
+        alert(`Failed to update ${name}'s state. Please try again.`);
+      } finally {
+        button.textContent = originalText;
+        button.disabled = false;
+      }
+    }
+
+    fetchBuildings();
+  </script>
+</body>
+</html>
